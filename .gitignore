@@ -1,0 +1,8 @@
+.hie/
+dist-newstyle/
+app/*.*~
+benchmark/*.*~
+src/*.*~
+test/*.*~
+*.png
+*.*~
