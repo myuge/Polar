@@ -157,6 +157,6 @@ toString (a:as) = "_" ++ a ++ (toString as)
 getTimestamp :: IO [Char]
 getTimestamp = formatTime defaultTimeLocale "%Y%m%d%H%M%S" <$> getZonedTime
 
-asPoint :: Point2 -> Point
+asPoint :: Point2D -> Point
 asPoint p = (round(fst(p))+500, round(snd(p))+500)
 

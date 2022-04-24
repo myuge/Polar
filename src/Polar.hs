@@ -11,7 +11,7 @@ module Polar
       getContext,
       Lines,
       Plane,
-      Point2
+      Point2D
     ) where
 
 projectName :: String
@@ -22,23 +22,26 @@ data PolarEnv = PolarEnv {
       x0 :: Double,
       y0 :: Double,
       z0 :: Double,
-      r :: Double, -- radius of sphere: r
+      -- radius of sphere: r
+      r :: Double,
       -- grid points in screen (m*a, n*a, 0), on x-y plane.
-      a :: Double, -- edge size of grid: a
+      -- edge size of grid: a
+      a :: Double,
+      -- number of lines per plane
       times :: Int
     }
 
-type Point3 = (Double,Double,Double)
+type Point3D = (Double,Double,Double)
 
 type Grid = (Int,Int)
     
 -- a point in space: (p1, p2, p3)
 -- Grid points.
-x :: Point3->Grid->PolarEnv->Double
+x :: Point3D->Grid->PolarEnv->Double
 x (p1,p2,p3) (m,n) env = ((x0 env)*(r env)^2 - ((x0 env)*p1 + (z0 env)*p3)*(a env)*(fromIntegral m)
                                       - (x0 env)*p2*(a env)*(fromIntegral n))
                          /((r env)^2 - p1*(a env)*(fromIntegral m) - p2*(a env)*(fromIntegral n) - p3*(z0 env))
-y :: Point3->Grid->PolarEnv->Double
+y :: Point3D->Grid->PolarEnv->Double
 y (p1,p2,p3) (m,n) env = ((y0 env)*(r env)^2 - (y0 env)*p1*(a env)*(fromIntegral m)
                                       - ((y0 env)*p2 + (z0 env)*p3)*(a env)*(fromIntegral n))
                          /((r env)^2 - p1*(a env)*(fromIntegral m) - p2*(a env)*(fromIntegral n) - p3*(z0 env))
@@ -46,7 +49,7 @@ y (p1,p2,p3) (m,n) env = ((y0 env)*(r env)^2 - (y0 env)*p1*(a env)*(fromIntegral
 -- x p1 p2 p3 m n =  ((-2.0)*p3*m)/(2 - p1*m - p2*n - p3*(-2.0))
 -- y p1 p2 p3 m n = -((-2.0)*p3*n)/(2 - p1*m - p2*n - p3*(-2.0))
         
-type Point2 = (Double,Double)
+type Point2D = (Double,Double)
 
 type Range = (Double,Double)
 
@@ -56,7 +59,7 @@ type Range = (Double,Double)
  if p1==p2 (so don't determine a line) or
  the line doesn't intersect with the view port, Nothing is returned.
 -}
-intersection :: Point2->Point2->Double->Double->Maybe(Point2,Point2)
+intersection :: Point2D->Point2D->Double->Double->Maybe(Point2D,Point2D)
 intersection p1 p2 w h =
   let
     x1 = fst p1
@@ -105,14 +108,14 @@ intersection p1 p2 w h =
 inRange :: Double->Range->Bool
 inRange x range = x >= (fst range) && x <= (snd range)
 
-type Lines = [(Point2, Point2)]
+type Lines = [(Point2D, Point2D)]
 
 type Plane = (Lines,Lines)
 
 getContext :: Double->Double->Double->Double->Double->Int->[Plane]
 getContext x0 y0 z0 r a times = getPolarPlanes aShape (PolarEnv x0 y0 z0 r a times)
 
-type Shape = [Point3]
+type Shape = [Point3D]
 
 aShape :: Shape    
 {-
@@ -137,11 +140,11 @@ aShape = [(-0.6000000000000014,0.4999999999999975,9.932256839900757e-15),
 getPolarPlanes :: Shape -> PolarEnv -> [Plane]
 getPolarPlanes ps env = map (getPolarPlane env) ps
 
-getPolarPlane :: PolarEnv -> Point3 -> Plane
+getPolarPlane :: PolarEnv -> Point3D -> Plane
 getPolarPlane env p = ((getVLines p 0 1 env) ++ (getVLines p (-1) (-1) env),
                        (getHLines p 0 1 env) ++ (getHLines p (-1) (-1) env))
 
-getVLines :: Point3->Int->Int->PolarEnv->[(Point2, Point2)]
+getVLines :: Point3D->Int->Int->PolarEnv->[(Point2D, Point2D)]
 getVLines p n delta env =
     getVLines2 (intersection (x1,y1) (x2,y2) 1000 1000) p n delta env
         where
@@ -153,7 +156,7 @@ getVLines p n delta env =
 -- TODO: the case that the distance between ajacent lines are under some limit (effectively zero)
 -- computation must terminate.
 
-getVLines2 :: Maybe(Point2,Point2)->Point3->Int->Int->PolarEnv->[(Point2, Point2)]
+getVLines2 :: Maybe(Point2D,Point2D)->Point3D->Int->Int->PolarEnv->[(Point2D, Point2D)]
 getVLines2 (Just vline) p n delta env
 --    = vline : (getVLines2 (intersection (x1,y1) (x2,y2) 1000 1000) p nn delta env)
     | (n >= -(times env) && n <= (times env)) = vline : (getVLines2 (intersection (x1,y1) (x2,y2) 1000 1000) p nn delta env)
@@ -166,7 +169,7 @@ getVLines2 (Just vline) p n delta env
       y2 = y p (nn,1) env
 getVLines2 Nothing _ _ _ _ = []
 
-getHLines :: Point3->Int->Int->PolarEnv->[(Point2, Point2)]
+getHLines :: Point3D->Int->Int->PolarEnv->[(Point2D, Point2D)]
 getHLines p n delta env =
     getHLines2 (intersection (x1,y1) (x2,y2) 1000 1000) p n delta env
         where
@@ -175,7 +178,7 @@ getHLines p n delta env =
           x2 = x p (1,n) env
           y2 = y p (1,n) env
 
-getHLines2 :: Maybe(Point2,Point2)->Point3->Int->Int->PolarEnv->[(Point2, Point2)]
+getHLines2 :: Maybe(Point2D,Point2D)->Point3D->Int->Int->PolarEnv->[(Point2D, Point2D)]
 getHLines2 (Just vline) p n delta env
 --    = vline : (getHLines2 (intersection (x1,y1) (x2,y2) 1000 1000) p nn delta env)
     | (n >= -(times env) && n <= (times env)) = vline : (getHLines2 (intersection (x1,y1) (x2,y2) 1000 1000) p nn delta env)
