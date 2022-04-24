@@ -147,8 +147,8 @@ savePict drawable pictType args =
   do  
     Just pixbuf <- pixbufGetFromDrawable drawable (Rectangle 0 0 999 999)
     timestamp <- getTimestamp
-    --pixbufSave pixbuf ("./" ++ pictType ++ (toString args) ++ ".png") (Data.Text.pack "png") ([]::[([Char],[Char])])
-    pixbufSave pixbuf ("./" ++ pictType ++ (timestamp) ++ ".png") (Data.Text.pack "png") ([]::[([Char],[Char])])
+    pixbufSave pixbuf ("./" ++ pictType ++ (toString args) ++ ".png") (Data.Text.pack "png") ([]::[([Char],[Char])])
+    --pixbufSave pixbuf ("./" ++ pictType ++ (timestamp) ++ ".png") (Data.Text.pack "png") ([]::[([Char],[Char])])
 
 toString :: [String] -> String
 toString [] = ""
