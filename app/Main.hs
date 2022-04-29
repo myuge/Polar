@@ -31,8 +31,8 @@ data Palette = Palette {
 main :: IO ()
 main = do
   args <- System.Environment.getArgs
-  if Prelude.length args /= 6 then
-      putStrLn "Usage: polar x0 y0 z0 r a times"
+  if Prelude.length args /= 7 then
+      putStrLn "Usage: polar x0 y0 z0 r a times color(0..6)"
   else
       do
         initGUI
@@ -49,11 +49,12 @@ main = do
         let r  = read (args !! 3) :: Double
         let a  = read (args !! 4) :: Double
         let times  = read (args !! 5) :: Int
+        let startColor = read (args !! 6) :: Int
         let context = Polar.getContext x0 y0 z0 r a times
         widgetShowAll window
         dw <- widgetGetDrawWindow canvas
         pixmap <- pixmapNew (Just dw) 1000 1000 Nothing
-        drawPict (castToDrawable pixmap) palette context
+        drawPict (castToDrawable pixmap) palette context startColor
         onExpose canvas $ \_ -> redraw dw (castToDrawable pixmap)
         saveButton <- builderGetObject builder castToButton "button1"
         onClicked saveButton $ savePict (castToDrawable pixmap) pictType args
@@ -73,8 +74,8 @@ initPalette = Palette {
   violet = newGCValues{ foreground = (Color 28013 14649 35723) } -- 109,57,139
   }
 
-drawPict :: Drawable -> Palette -> [Plane] -> IO Bool
-drawPict d palette context = 
+drawPict :: Drawable -> Palette -> [Plane] -> Int -> IO Bool
+drawPict d palette context startColor = 
   do
     gc <- gcNew d
 
@@ -83,24 +84,15 @@ drawPict d palette context =
     drawRectangle d gc True 0 0 1000 1000
 
     --mapM (drawPlane d gc palette) context
-    drawPlanes d gc palette context
+    drawPlanes d gc palette context startColor
     return True
 
-drawPlanes :: Drawable -> GC -> Palette -> [Plane] -> IO()
-drawPlanes d gc palette (pln:plns) =
+drawPlanes :: Drawable -> GC -> Palette -> [Plane] -> Int -> IO()
+drawPlanes d gc palette (pln:plns) startColor =
   do
---    drawPlane d gc palette pln ((Prelude.length plns) `mod` 7)
-    drawPlane d gc palette pln (((Prelude.length plns)+6) `mod` 7)
-    drawPlanes d gc palette plns
---    drawPlane d gc palette ((pln:plns) !! 0) 3
---    drawPlane d gc palette ((pln:plns) !! 1) 2
---    drawPlane d gc palette ((pln:plns) !! 2) 2
---    drawPlane d gc palette ((pln:plns) !! 3) 2
---    drawPlane d gc palette ((pln:plns) !! 4) 4
---    drawPlane d gc palette ((pln:plns) !! 5) 5
---    drawPlane d gc palette ((pln:plns) !! 6) 6
---    return ()
-drawPlanes d gc palette [] =
+    drawPlane d gc palette pln ((7-(Prelude.length plns)+startColor) `mod` 7)
+    drawPlanes d gc palette plns startColor
+drawPlanes d gc palette [] _ =
   return ()
 
 drawPlane :: Drawable -> GC -> Palette -> Plane -> Int -> IO()
