@@ -7,6 +7,7 @@ import Data.Text
 import qualified Data.ByteString.Lazy.Char8 as ByteString
 import Data.Time
 import System.Environment
+import System.IO
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Builder
 import Graphics.UI.Gtk.Gdk.DrawWindow
@@ -31,8 +32,8 @@ data Palette = Palette {
 main :: IO ()
 main = do
   args <- System.Environment.getArgs
-  if Prelude.length args /= 7 then
-      putStrLn "Usage: polar x0 y0 z0 r a times color(0..6)"
+  if Prelude.length args /= 8 then
+      putStrLn "Usage: polar x0 y0 z0 r a times color(0..6) shapedatafile"
   else
       do
         initGUI
@@ -50,7 +51,9 @@ main = do
         let a  = read (args !! 4) :: Double
         let times  = read (args !! 5) :: Int
         let startColor = read (args !! 6) :: Int
-        let context = Polar.getContext x0 y0 z0 r a times
+        let shapedatafile = (args !! 7)
+        shape <- getShape shapedatafile
+        let context = Polar.getContext x0 y0 z0 r a times shape
         widgetShowAll window
         dw <- widgetGetDrawWindow canvas
         pixmap <- pixmapNew (Just dw) 1000 1000 Nothing
@@ -84,15 +87,15 @@ drawPict d palette context startColor =
     drawRectangle d gc True 0 0 1000 1000
 
     --mapM (drawPlane d gc palette) context
-    drawPlanes d gc palette context startColor
+    drawPlanes d gc palette context (Prelude.length context) startColor
     return True
 
-drawPlanes :: Drawable -> GC -> Palette -> [Plane] -> Int -> IO()
-drawPlanes d gc palette (pln:plns) startColor =
+drawPlanes :: Drawable -> GC -> Palette -> [Plane] -> Int -> Int -> IO()
+drawPlanes d gc palette (pln:plns) nPlanes startColor =
   do
-    drawPlane d gc palette pln ((6-(Prelude.length plns)+startColor) `mod` 7)
-    drawPlanes d gc palette plns startColor
-drawPlanes d gc palette [] _ =
+    drawPlane d gc palette pln ((nPlanes-1-(Prelude.length plns)+startColor) `mod` 7)
+    drawPlanes d gc palette plns nPlanes startColor
+drawPlanes d gc palette [] _ _ =
   return ()
 
 drawPlane :: Drawable -> GC -> Palette -> Plane -> Int -> IO()
@@ -152,3 +155,17 @@ getTimestamp = formatTime defaultTimeLocale "%Y%m%d%H%M%S" <$> getZonedTime
 asPoint :: Point2D -> Point
 asPoint p = (round(fst(p))+500, round(snd(p))+500)
 
+getShape :: String -> IO(Shape)
+getShape filename = do
+  fhdl <- openFile(filename) ReadMode
+  contents <- hGetContents fhdl
+-- hClose fhdl
+  return (Prelude.map asPoint3D (Data.String.lines contents))
+
+asPoint3D :: String -> Point3D
+asPoint3D aLine = (p1,p2,p3)
+    where
+      vals = Data.String.words aLine
+      p1 = read (vals !! 0) :: Double
+      p2 = read (vals !! 1) :: Double
+      p3 = read (vals !! 2) :: Double

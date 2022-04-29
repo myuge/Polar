@@ -11,7 +11,9 @@ module Polar
       getContext,
       Lines,
       Plane,
-      Point2D
+      Point2D,
+      Point3D,
+      Shape
     ) where
 
 projectName :: String
@@ -130,11 +132,12 @@ type Lines = [(Point2D, Point2D)]
 
 type Plane = (Lines,Lines)
 
-getContext :: Double->Double->Double->Double->Double->Int->[Plane]
-getContext x0 y0 z0 r a times = getPolarPlanes aShape (PolarEnv x0 y0 z0 r a times)
+getContext :: Double->Double->Double->Double->Double->Int->Shape->[Plane]
+getContext x0 y0 z0 r a times shape = getPolarPlanes shape (PolarEnv x0 y0 z0 r a times)
 
 type Shape = [Point3D]
 
+-- for debug
 aShape :: Shape    
 {-
 aShape = [(-0.6000000000000014,9.932256839900757e-15,0.4999999999999975),
@@ -173,14 +176,13 @@ getVLines p n delta env =
 
 getVLines2 :: Maybe(Point2D,Point2D)->Point3D->Int->Int->PolarEnv->[(Point2D, Point2D)]
 getVLines2 (Just vline) p n delta env
---    = vline : (getVLines2 (intersection (x1,y1) (x2,y2) 1000 1000) p nn delta env)
     | (n >= -(times env) && n <= (times env)) = vline : (getVLines2 (intersection (point3DToScreen2D p (nn,0) env) (point3DToScreen2D p (nn,1) env) 1000 1000) p nn delta env)
-    | otherwise                               = []
+    | otherwise = []
     where
       nn = n + delta
 getVLines2 Nothing p n delta env
     | (n >= -(times env) && n <= (times env)) = (getVLines2 (intersection (point3DToScreen2D p (nn,0) env) (point3DToScreen2D p (nn,1) env) 1000 1000) p nn delta env)
-    | otherwise                               = []
+    | otherwise = []
     where
       nn = n + delta
 
@@ -190,13 +192,12 @@ getHLines p n delta env =
 
 getHLines2 :: Maybe(Point2D,Point2D)->Point3D->Int->Int->PolarEnv->[(Point2D, Point2D)]
 getHLines2 (Just vline) p n delta env
---    = vline : (getHLines2 (intersection (x1,y1) (x2,y2) 1000 1000) p nn delta env)
     | (n >= -(times env) && n <= (times env)) = vline : (getHLines2 (intersection (point3DToScreen2D p (0,nn) env) (point3DToScreen2D p (1,nn) env) 1000 1000) p nn delta env)
-    | otherwise                               = []
+    | otherwise = []
     where
       nn = n + delta
 getHLines2 Nothing p n delta env
     | (n >= -(times env) && n <= (times env)) = (getHLines2 (intersection (point3DToScreen2D p (0,nn) env) (point3DToScreen2D p (1,nn) env) 1000 1000) p nn delta env)
-    | otherwise                               = []
+    | otherwise = []
     where
       nn = n + delta
