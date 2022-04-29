@@ -90,7 +90,7 @@ drawPict d palette context startColor =
 drawPlanes :: Drawable -> GC -> Palette -> [Plane] -> Int -> IO()
 drawPlanes d gc palette (pln:plns) startColor =
   do
-    drawPlane d gc palette pln ((7-(Prelude.length plns)+startColor) `mod` 7)
+    drawPlane d gc palette pln ((6-(Prelude.length plns)+startColor) `mod` 7)
     drawPlanes d gc palette plns startColor
 drawPlanes d gc palette [] _ =
   return ()
